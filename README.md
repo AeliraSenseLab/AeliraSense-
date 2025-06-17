@@ -73,9 +73,6 @@ The system transitions into proactive forecasting. Foresight modules are designe
 
 Below are the core AI-powered functions used in AeliraSense to detect risks, predict market shifts, and protect user assets. Each function is designed to operate in real time within the browser extension and backend systems.
 
----
-## 🧬 Aelira Intelligence Functions
-
 ### 1. 🧠 AnomalyVision — Detecting Hidden Crypto Risks
 
 ```javascript
