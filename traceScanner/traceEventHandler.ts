@@ -1,53 +1,60 @@
-// /tracescanner/traceEventHandler.ts
-
 import { ParsedConfirmedTransaction } from '@solana/web3.js'
 import { TraceScannerEngine } from './traceScannerEngine'
 
 export type TraceCallback = (tx: ParsedConfirmedTransaction) => void
 
+interface Watcher {
+  lastSig: string | null
+  intervalId: NodeJS.Timeout
+}
+
 /**
- * TraceEventHandler
- *
- * Uses TraceScannerEngine to poll for new transactions and
- * invokes your callback when matching criteria are met.
+ * Continuously polls for new transactions and invokes callbacks.
  */
 export class TraceEventHandler {
-  private engine: TraceScannerEngine
-  private lastSeenSignature: string | null = null
-  private pollingInterval: number
+  private engine = new TraceScannerEngine(this.rpcUrl)
+  private watchers = new Map<string, Watcher>()
 
-  constructor(rpcUrl: string, pollingIntervalMs: number = 30_000) {
-    this.engine = new TraceScannerEngine(rpcUrl)
-    this.pollingInterval = pollingIntervalMs
-  }
+  constructor(private rpcUrl: string, private pollingIntervalMs = 30_000) {}
 
-  /**
-   * Start watching an address/program and fire callback on each new transaction.
-   */
-  public start(
+  start(
     address: string,
     callback: TraceCallback,
-    fetchLimit: number = 20
-  ): NodeJS.Timeout {
+    fetchLimit = 20
+  ): void {
+    if (this.watchers.has(address)) return
+
+    let lastSig: string | null = null
     const poll = async () => {
       try {
         const txns = await this.engine.fetchRecentTraces(address, fetchLimit)
-        for (const tx of txns) {
-          const sig = tx.transaction.signatures[0]
-          if (this.lastSeenSignature === sig) break
-          callback(tx)
+        for (const { transaction } of txns) {
+          const sig = transaction.signatures[0]
+          if (sig === lastSig) break
+          callback({ transaction } as ParsedConfirmedTransaction)
         }
-        // update lastSeenSignature to the most recent
-        if (txns.length > 0) {
-          this.lastSeenSignature = txns[0].transaction.signatures[0]
-        }
+        if (txns.length) lastSig = txns[0].transaction.signatures[0]
       } catch (err) {
-        console.error('TraceEventHandler error:', err)
+        console.error('TraceEventHandler error', err)
       }
     }
 
-    // initial poll immediately, then interval
     poll()
-    return setInterval(poll, this.pollingInterval)
+    const intervalId = setInterval(poll, this.pollingIntervalMs)
+    this.watchers.set(address, { lastSig, intervalId })
+  }
+
+  stop(address: string): void {
+    const watcher = this.watchers.get(address)
+    if (!watcher) return
+    clearInterval(watcher.intervalId)
+    this.watchers.delete(address)
+  }
+
+  stopAll(): void {
+    for (const { intervalId } of this.watchers.values()) {
+      clearInterval(intervalId)
+    }
+    this.watchers.clear()
   }
 }
