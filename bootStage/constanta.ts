@@ -1,8 +1,3 @@
-// config.ts
-
-/**
- * Global scan and detection configuration for the JobWatcher system.
- */
 export const SCAN_CONFIG = {
   /** How often to perform a full scan (in ms) */
   intervalMs: 300_000,        // default: 5 minutes
