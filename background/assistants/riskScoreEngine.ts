@@ -14,10 +14,6 @@ export interface RiskScore {
   timestamp: number
 }
 
-/**
- * Computes a risk score for a token based on activity velocity,
- * holder concentration, and price volatility.
- */
 export class RiskScoreEngine {
   constructor(private rpcUrl: string, private dexChain = 'solana') {}
 
