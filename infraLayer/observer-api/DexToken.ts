@@ -1,6 +1,4 @@
-
-
-import fetch from 'node-fetch'
+import fetch, { RequestInit } from 'node-fetch'
 
 export interface PairInfo {
   dex: string
@@ -10,43 +8,71 @@ export interface PairInfo {
   poolAddress?: string
 }
 
-/**
- * Fetch token pairs from multiple Solana DEXes (Serum & Raydium)
- */
-export async function fetchDexTokenPairs(): Promise<PairInfo[]> {
-  const results: PairInfo[] = []
+interface DexEndpoint {
+  name: string
+  url: string
+  parser: (data: any) => PairInfo[]
+}
 
-  // 1) Serum markets
+// Utility: fetch with timeout
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeout = 10000
+): Promise<any> {
+  const controller = new AbortController()
+  const id = setTimeout(() => controller.abort(), timeout)
   try {
-    const serumRes = await fetch('https://api.serum-v2.mainnet.rpcpool.com/markets')
-    const serumMarkets = (await serumRes.json()) as any[]
-    serumMarkets.forEach(m => {
-      results.push({
+    const response = await fetch(url, { signal: controller.signal, ...options })
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status} at ${url}`)
+    }
+    return response.json()
+  } finally {
+    clearTimeout(id)
+  }
+}
+
+const dexEndpoints: DexEndpoint[] = [
+  {
+    name: 'Serum',
+    url: 'https://api.serum-v2.mainnet.rpcpool.com/markets',
+    parser: (markets: any[]) =>
+      markets.map(m => ({
         dex: 'Serum',
         baseMint: m.baseMint,
         quoteMint: m.quoteMint,
-        marketAddress: m.address
-      })
-    })
-  } catch (err) {
-    console.warn('Serum fetch failed:', err)
-  }
-
-  // 2) Raydium pools
-  try {
-    const rayRes = await fetch('https://api.raydium.io/v2/main/pairs')
-    const rayPools = (await rayRes.json()) as any[]
-    rayPools.forEach(p => {
-      results.push({
+        marketAddress: m.address,
+      })),
+  },
+  {
+    name: 'Raydium',
+    url: 'https://api.raydium.io/v2/main/pairs',
+    parser: (pairs: any[]) =>
+      pairs.map(p => ({
         dex: 'Raydium',
         baseMint: p.baseMint,
         quoteMint: p.quoteMint,
-        poolAddress: p.ammId
-      })
-    })
-  } catch (err) {
-    console.warn('Raydium fetch failed:', err)
-  }
+        poolAddress: p.ammId,
+      })),
+  },
+]
 
+/**
+ * Fetch token pairs from multiple Solana DEXes in parallel
+ * with timeout and improved error handling
+ */
+export async function fetchDexTokenPairs(): Promise<PairInfo[]> {
+  const results: PairInfo[] = []
+  await Promise.all(
+    dexEndpoints.map(async ({ name, url, parser }) => {
+      try {
+        const data = await fetchWithTimeout(url)
+        results.push(...parser(data))
+      } catch (err) {
+        console.warn(`${name} fetch failed:`, err)
+      }
+    })
+  )
   return results
 }
