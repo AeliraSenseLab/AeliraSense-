@@ -1,45 +1,53 @@
-interface TruncateOptions {
+export interface TruncateOptions {
   prefixLength?: number
   suffixLength?: number
   fallback?: string
-  showFullOnHover?: boolean // for future UI integration
+  ellipsis?: string
+  showFullOnHover?: boolean // reserved for UI integration
 }
 
 /**
- * Truncates a wallet address with optional prefix/suffix preservation.
+ * Truncates a wallet address, preserving a prefix and suffix,
+ * and inserts a customizable ellipsis in between.
  *
- * @param address - The full address string
- * @param options - Customization options
- * @returns A truncated address string or fallback
+ * @param address     The full address string
+ * @param options     Customization options
+ * @returns           Truncated address or fallback string
  */
 export const truncateAddress = (
-  address: string | undefined | null,
+  address: string | null | undefined,
   options: TruncateOptions = {}
 ): string => {
   const {
     prefixLength = 6,
     suffixLength = 6,
-    fallback = "Unknown",
+    fallback = 'Unknown',
+    ellipsis = '…',
     showFullOnHover = false
   } = options
 
-  if (
-    !address ||
-    typeof address !== "string" ||
-    address.length < prefixLength + suffixLength + 3
-  ) {
-    console.warn(`[truncateAddress] Invalid or short address:`, address)
+  if (!address || typeof address !== 'string') {
+    console.warn('[truncateAddress] No address provided')
     return fallback
   }
 
-  const prefix = address.slice(0, prefixLength)
-  const suffix = address.slice(-suffixLength)
-  const truncated = `${prefix}...${suffix}`
+  // Ensure lengths are non-negative integers
+  const pre = Math.max(0, Math.floor(prefixLength))
+  const suf = Math.max(0, Math.floor(suffixLength))
+  const minLength = pre + suf + ellipsis.length
 
-  // Potential future use for tooltip logic
+  if (address.length <= minLength) {
+    // Too short to truncate usefully
+    return address
+  }
+
+  const head = address.slice(0, pre)
+  const tail = address.slice(-suf)
+  const truncated = `${head}${ellipsis}${tail}`
+
   if (showFullOnHover) {
-    // e.g. <span title={address}>{truncated}</span> in UI context
-    return truncated // logic is frontend-specific
+    // UI layer can render `<span title={address}>{truncated}</span>`
+    return truncated
   }
 
   return truncated
