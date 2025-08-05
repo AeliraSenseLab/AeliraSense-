@@ -1,33 +1,60 @@
-export const SCAN_CONFIG = {
-  /** How often to perform a full scan (in ms) */
-  intervalMs: 300_000,        // default: 5 minutes
-  
+/** Configuration for full-chain scanning behavior */
+export interface ScanConfig {
+  /** How often to perform a full scan (ms) */
+  readonly intervalMs: number
   /** How many recent transactions to fetch per address/program */
-  maxTxFetch: 500,            // default: 500 transactions
-  
+  readonly maxTxFetch: number
   /** Minimum token amount to flag as a “whale” movement */
-  whaleThreshold: 50_000,     // default: 50K tokens
+  readonly whaleThreshold: number
 }
 
-/**
- * Activity detection windows and thresholds.
- */
-export const DETECTION_PARAMS = {
+/** Activity detection windows and thresholds */
+export interface DetectionParams {
   /** Time window (ms) to identify sudden activity bursts */
-  flashWindowMs: 120_000,     // default: 2 minutes
-  
+  readonly flashWindowMs: number
   /** Risk score above which an alert is emitted (0.0–1.0) */
-  riskAlertThreshold: 0.9,    // default: 90%
-  
+  readonly riskAlertThreshold: number
   /** Minimum on-chain liquidity (in tokens) to include in monitoring */
-  minLiquidity: 10_000,       // default: 10K tokens
+  readonly minLiquidity: number
+}
+
+/** Named channels or topics for emitting alerts */
+export interface AlertTopics {
+  readonly whales: string
+  readonly tokens: string
+  readonly flashPumps: string
 }
 
 /**
- * Named channels or topics for emitting alerts.
+ * Load a numeric environment variable (fallback to default if missing or invalid)
  */
-export const ALERT_TOPICS = {
-  whales:    "jobwatcher/alerts/whales",
-  tokens:    "jobwatcher/alerts/tokens",
-  flashPumps:"jobwatcher/alerts/flash-pumps",
+function envNumber(name: string, fallback: number): number {
+  const val = Number(process.env[name])
+  return isFinite(val) && val > 0 ? val : fallback
 }
+
+/**
+ * Primary configuration object (frozen to prevent runtime mutation)
+ */
+export const CONFIG = Object.freeze({
+  scan: Object.freeze<ScanConfig>({
+    intervalMs: envNumber('SCAN_INTERVAL_MS', 300_000),
+    maxTxFetch: envNumber('SCAN_MAX_TX_FETCH', 500),
+    whaleThreshold: envNumber('SCAN_WHALE_THRESHOLD', 50_000),
+  }),
+  detection: Object.freeze<DetectionParams>({
+    flashWindowMs: envNumber('DETECTION_FLASH_WINDOW_MS', 120_000),
+    riskAlertThreshold: envNumber('DETECTION_RISK_ALERT_THRESHOLD', 0.9),
+    minLiquidity: envNumber('DETECTION_MIN_LIQUIDITY', 10_000),
+  }),
+  alerts: Object.freeze<AlertTopics>({
+    whales:    process.env.ALERT_TOPIC_WHALES    ?? "jobwatcher/alerts/whales",
+    tokens:    process.env.ALERT_TOPIC_TOKENS    ?? "jobwatcher/alerts/tokens",
+    flashPumps:process.env.ALERT_TOPIC_FLASH     ?? "jobwatcher/alerts/flash-pumps",
+  }),
+} as const)
+
+/** Usage:
+ *  import { CONFIG } from './config'
+ *  console.log(CONFIG.scan.intervalMs)
+ */
