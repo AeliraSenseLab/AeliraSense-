@@ -1,52 +1,74 @@
-
 export interface BehaviorProfile {
-  lastActive: number        // timestamp ms
-  txCount: number           // total transactions
-  avgTxValue: number        // average lamports per tx
+  /** Last activity timestamp (ms since epoch) */
+  lastActive: number
+  /** Total number of transactions recorded */
+  txCount: number
+  /** Average lamports per transaction */
+  avgTxValue: number
 }
 
-
 export class UserBehaviorMap {
-  private map: Map<string, BehaviorProfile> = new Map()
+  private map = new Map<string, BehaviorProfile>()
 
   /**
-   * Retrieve or initialize a profile for a given address.
+   * Get the profile for an address, initializing if necessary
+   * @param address  Base58-encoded public key
    */
   public get(address: string): BehaviorProfile {
-    if (!this.map.has(address)) {
-      this.map.set(address, { lastActive: 0, txCount: 0, avgTxValue: 0 })
+    let profile = this.map.get(address)
+    if (!profile) {
+      profile = { lastActive: 0, txCount: 0, avgTxValue: 0 }
+      this.map.set(address, profile)
     }
-    return this.map.get(address)!
+    return profile
   }
 
   /**
-   * Update a user's profile with a new transaction event.
+   * Record a transaction: updates lastActive, txCount, and avgTxValue
+   * @param address         Address of the user
+   * @param timestampMs     Transaction timestamp in ms
+   * @param txValueLamports Transaction value in lamports
    */
   public recordTx(
     address: string,
     timestampMs: number,
     txValueLamports: number
   ): BehaviorProfile {
-    const profile = this.get(address)
+    const p = this.get(address)
     // update last active
-    profile.lastActive = Math.max(profile.lastActive, timestampMs)
-    // update average tx value
-    profile.txCount += 1
-    profile.avgTxValue =
-      ((profile.avgTxValue * (profile.txCount - 1)) + txValueLamports) /
-      profile.txCount
-    this.map.set(address, profile)
-    return profile
+    p.lastActive = Math.max(p.lastActive, timestampMs)
+    // update counts and average
+    p.txCount += 1
+    p.avgTxValue = (p.avgTxValue * (p.txCount - 1) + txValueLamports) / p.txCount
+    return p
   }
 
   /**
-   * Remove stale profiles not active since cutoff.
+   * Remove profiles that have been inactive since before cutoff
+   * @param cutoffMs  Profiles with lastActive < cutoffMs will be removed
    */
   public pruneStale(cutoffMs: number): void {
-    for (const [addr, profile] of this.map.entries()) {
+    for (const [addr, profile] of this.map) {
       if (profile.lastActive < cutoffMs) {
         this.map.delete(addr)
       }
     }
+  }
+
+  /** Get number of tracked profiles */
+  public get size(): number {
+    return this.map.size
+  }
+
+  /** Clear all profiles */
+  public clearAll(): void {
+    this.map.clear()
+  }
+
+  /**
+   * List all active profiles as [address, profile] tuples
+   */
+  public entries(): [string, BehaviorProfile][] {
+    return Array.from(this.map.entries())
   }
 }
