@@ -1,4 +1,4 @@
-import { Wallet } from "@coinbase/coinbase-sdk"
+import { Wallet } from "@solanabase/solanabase-sdk"
 import { RequestFaucetFundsArgumentsType, RequestFaucetFundsActionResultType } from "./types"
 
 export async function acquireTestFunds(
