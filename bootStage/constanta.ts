@@ -1,36 +1,52 @@
 /** Configuration for full-chain scanning behavior */
 export interface ScanConfig {
   /** How often to perform a full scan (ms) */
-  readonly intervalMs: number
+  readonly intervalMs: number;
   /** How many recent transactions to fetch per address/program */
-  readonly maxTxFetch: number
-  /** Minimum token amount to flag as a “whale” movement */
-  readonly whaleThreshold: number
+  readonly maxTxFetch: number;
+  /** Minimum token amount to flag as a "whale" movement */
+  readonly whaleThreshold: number;
 }
 
 /** Activity detection windows and thresholds */
 export interface DetectionParams {
   /** Time window (ms) to identify sudden activity bursts */
-  readonly flashWindowMs: number
+  readonly flashWindowMs: number;
   /** Risk score above which an alert is emitted (0.0–1.0) */
-  readonly riskAlertThreshold: number
+  readonly riskAlertThreshold: number;
   /** Minimum on-chain liquidity (in tokens) to include in monitoring */
-  readonly minLiquidity: number
+  readonly minLiquidity: number;
 }
 
 /** Named channels or topics for emitting alerts */
 export interface AlertTopics {
-  readonly whales: string
-  readonly tokens: string
-  readonly flashPumps: string
+  readonly whales: string;
+  readonly tokens: string;
+  readonly flashPumps: string;
 }
 
 /**
  * Load a numeric environment variable (fallback to default if missing or invalid)
  */
 function envNumber(name: string, fallback: number): number {
-  const val = Number(process.env[name])
-  return isFinite(val) && val > 0 ? val : fallback
+  const val = Number(process.env[name]);
+  if (isNaN(val) || val <= 0) {
+    console.warn(`[CONFIG] Invalid or missing ${name}, using fallback: ${fallback}`);
+    return fallback;
+  }
+  return val;
+}
+
+/**
+ * Load a string environment variable (fallback to default if missing)
+ */
+function envString(name: string, fallback: string): string {
+  const val = process.env[name]?.trim();
+  if (!val) {
+    console.warn(`[CONFIG] Invalid or missing ${name}, using fallback: ${fallback}`);
+    return fallback;
+  }
+  return val;
 }
 
 /**
@@ -42,19 +58,22 @@ export const CONFIG = Object.freeze({
     maxTxFetch: envNumber('SCAN_MAX_TX_FETCH', 500),
     whaleThreshold: envNumber('SCAN_WHALE_THRESHOLD', 50_000),
   }),
+
   detection: Object.freeze<DetectionParams>({
     flashWindowMs: envNumber('DETECTION_FLASH_WINDOW_MS', 120_000),
     riskAlertThreshold: envNumber('DETECTION_RISK_ALERT_THRESHOLD', 0.9),
     minLiquidity: envNumber('DETECTION_MIN_LIQUIDITY', 10_000),
   }),
+
   alerts: Object.freeze<AlertTopics>({
-    whales:    process.env.ALERT_TOPIC_WHALES    ?? "jobwatcher/alerts/whales",
-    tokens:    process.env.ALERT_TOPIC_TOKENS    ?? "jobwatcher/alerts/tokens",
-    flashPumps:process.env.ALERT_TOPIC_FLASH     ?? "jobwatcher/alerts/flash-pumps",
+    whales: envString('ALERT_TOPIC_WHALES', "jobwatcher/alerts/whales"),
+    tokens: envString('ALERT_TOPIC_TOKENS', "jobwatcher/alerts/tokens"),
+    flashPumps: envString('ALERT_TOPIC_FLASH', "jobwatcher/alerts/flash-pumps"),
   }),
-} as const)
+} as const);
 
 /** Usage:
  *  import { CONFIG } from './config'
  *  console.log(CONFIG.scan.intervalMs)
  */
+
