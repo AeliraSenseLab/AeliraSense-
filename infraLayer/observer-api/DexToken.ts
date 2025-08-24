@@ -14,7 +14,6 @@ interface DexEndpoint {
   parser: (data: any) => PairInfo[]
 }
 
-// Utility: fetch with timeout
 async function fetchWithTimeout(
   url: string,
   options: RequestInit = {},
@@ -58,10 +57,7 @@ const dexEndpoints: DexEndpoint[] = [
   },
 ]
 
-/**
- * Fetch token pairs from multiple Solana DEXes in parallel
- * with timeout and improved error handling
- */
+
 export async function fetchDexTokenPairs(): Promise<PairInfo[]> {
   const results: PairInfo[] = []
   await Promise.all(
