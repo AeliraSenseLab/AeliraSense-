@@ -1,54 +1,85 @@
 export interface TruncateOptions {
+  /** Number of leading characters to keep (non-negative integer) */
   prefixLength?: number
+  /** Number of trailing characters to keep (non-negative integer) */
   suffixLength?: number
+  /** Value to return when the input is null/undefined/empty */
   fallback?: string
+  /** The separator placed between prefix and suffix */
   ellipsis?: string
-  showFullOnHover?: boolean // reserved for UI integration
+  /** Reserved for UI integrations that may show a tooltip */
+  showFullOnHover?: boolean
+  /** Optional warning hook instead of console.warn */
+  warn?: (message: string) => void
+  /** Trim surrounding whitespace from the input before processing */
+  trim?: boolean
 }
 
 /**
- * Truncates a wallet address, preserving a prefix and suffix,
- * and inserts a customizable ellipsis in between.
+ * Safely truncates an address-like string by preserving a prefix and suffix
+ * and inserting a customizable ellipsis between them
  *
- * @param address     The full address string
- * @param options     Customization options
- * @returns           Truncated address or fallback string
+ * Design goals:
+ * - Pure and side-effect free (no console noise unless you pass `warn`)
+ * - Defensive option normalization
+ * - Never returns a longer string than the input
+ * - Gracefully handles edge cases (short strings, zero prefix/suffix, empty ellipsis)
  */
 export const truncateAddress = (
   address: string | null | undefined,
   options: TruncateOptions = {}
 ): string => {
-  const {
-    prefixLength = 6,
-    suffixLength = 6,
-    fallback = 'Unknown',
-    ellipsis = '…',
-    showFullOnHover = false
-  } = options
-
-  if (!address || typeof address !== 'string') {
-    console.warn('[truncateAddress] No address provided')
-    return fallback
+  const defaults: Required<Omit<TruncateOptions, 'warn' | 'showFullOnHover'>> & Pick<TruncateOptions, 'warn' | 'showFullOnHover'> = {
+    prefixLength: 6,
+    suffixLength: 6,
+    fallback: 'Unknown',
+    ellipsis: '…',
+    trim: true,
+    warn: undefined,
+    showFullOnHover: false
   }
 
-  // Ensure lengths are non-negative integers
-  const pre = Math.max(0, Math.floor(prefixLength))
-  const suf = Math.max(0, Math.floor(suffixLength))
-  const minLength = pre + suf + ellipsis.length
+  const opts = Object.freeze({ ...defaults, ...options })
 
-  if (address.length <= minLength) {
-    // Too short to truncate usefully
-    return address
+  if (typeof address !== 'string' || address.length === 0) {
+    if (opts.warn) opts.warn('[truncateAddress] No address provided')
+    return opts.fallback
   }
 
-  const head = address.slice(0, pre)
-  const tail = address.slice(-suf)
+  const input = opts.trim ? address.trim() : address
+
+  const pre = Number.isFinite(opts.prefixLength) ? Math.max(0, Math.floor(opts.prefixLength!)) : defaults.prefixLength
+  const suf = Number.isFinite(opts.suffixLength) ? Math.max(0, Math.floor(opts.suffixLength!)) : defaults.suffixLength
+
+  const ellipsis = typeof opts.ellipsis === 'string' ? opts.ellipsis : defaults.ellipsis
+
+  const glyphs = Array.from(input)
+  const minNeeded = pre + suf + (ellipsis ? Array.from(ellipsis).length : 0)
+
+  if (glyphs.length <= minNeeded || (pre === 0 && suf === 0)) {
+    return input
+  }
+
+  const head = glyphs.slice(0, pre).join('')
+  const tail = glyphs.slice(-suf).join('')
+
   const truncated = `${head}${ellipsis}${tail}`
 
-  if (showFullOnHover) {
-    // UI layer can render `<span title={address}>{truncated}</span>`
-    return truncated
-  }
-
-  return truncated
+  return truncated.length < input.length ? truncated : input
 }
+
+/**
+ * Convenience helper for common 4-4 truncation, e.g. ABCD…WXYZ
+ */
+export const truncate44 = (
+  address: string | null | undefined,
+  opts?: Omit<TruncateOptions, 'prefixLength' | 'suffixLength'>
+) => truncateAddress(address, { ...opts, prefixLength: 4, suffixLength: 4 })
+
+/**
+ * Convenience helper for compact 3-3 truncation, e.g. ABC…XYZ
+ */
+export const truncate33 = (
+  address: string | null | undefined,
+  opts?: Omit<TruncateOptions, 'prefixLength' | 'suffixLength'>
+) => truncateAddress(address, { ...opts, prefixLength: 3, suffixLength: 3 })
