@@ -8,7 +8,9 @@ export type ActionId =
   | "getTokenBalance"
   | "getAllBalances"
   | "resolveTokenMint"
-  | "executeTransfer";
+  | "executeTransfer"
+  | "getTransactionHistory"
+  | "getTokenMetadata";
 
 /**
  * Represents a dynamically loaded action module.
@@ -26,6 +28,8 @@ const ModuleRegistry: Record<ActionId, string> = {
   getAllBalances: "./actions/getAllBalances.js",
   resolveTokenMint: "./actions/resolveTokenMint.js",
   executeTransfer: "./actions/executeTransfer.js",
+  getTransactionHistory: "./actions/getTransactionHistory.js",
+  getTokenMetadata: "./actions/getTokenMetadata.js",
 };
 
 /**
@@ -50,31 +54,14 @@ export async function loadActionModule(actionId: ActionId): Promise<ActionFuncti
   }
 
   try {
-    // Use dynamic ES module import
     const module = await import(/* webpackIgnore: true */ modulePath);
     if (!module || typeof module.default !== "function") {
       throw new Error(`[moduleRegistry] Module at "${modulePath}" does not export a default function.`);
     }
-
     return module.default as ActionFunction;
   } catch (err: any) {
     throw new Error(`[moduleRegistry] Failed to load module for "${actionId}" from "${modulePath}": ${err.message}`);
   }
 }
 
-/**
- * Example usage:
- * 
- * (async () => {
- *   try {
- *     const action = await loadActionModule("getWalletAddress");
- *     const address = await action("userPublicKey");
- *     console.log("Wallet Address:", address);
- *   } catch (error) {
- *     console.error(error);
- *   }
- * })();
- */
-
-// Export registry for introspection if needed
 export { ModuleRegistry };
