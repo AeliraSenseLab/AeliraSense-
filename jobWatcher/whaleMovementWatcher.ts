@@ -17,9 +17,7 @@ export interface WhaleMovementWatcherOptions {
   concurrency?: number    // max parallel RPC calls
 }
 
-/**
- * Watches for large SPL token transfers (“whale moves”) on Solana.
- */
+
 export class WhaleMovementWatcher {
   private connection: Connection
   private threshold: number
@@ -42,9 +40,8 @@ export class WhaleMovementWatcher {
     this.concurrency = opts.concurrency ?? 5
   }
 
-  /**
-   * Fetch and parse one transaction by signature.
-   */
+ 
+
   private async fetchParsedTx(sig: string): Promise<ParsedTransactionWithMeta | null> {
     try {
       return await this.connection.getParsedTransaction(sig, this.commitment)
