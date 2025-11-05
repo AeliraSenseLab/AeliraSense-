@@ -10,7 +10,17 @@ Using advanced machine learning models, it scans live blockchain data to detect 
 Built for those who sense what others miss.
 
 ---
+# AeliraSense — Links
 
+[![Website](https://img.shields.io/badge/Website-aelirasense.com-3b82f6?logo=vercel&logoColor=white)](https://aelirasense.com)
+[![Docs](https://img.shields.io/badge/Docs-GitBook-3b82f6?logo=bookstack&logoColor=white)](https://aelirasense.gitbook.io/aelirasense-docs/)
+[![GitHub](https://img.shields.io/badge/GitHub-AeliraSenseLab-3b82f6?logo=github&logoColor=white)](https://github.com/AeliraSenseLab/AeliraSense-/)
+[![X](https://img.shields.io/badge/X-@AeliraSense-3b82f6?logo=x&logoColor=white)](https://x.com/AeliraSense)
+[![Telegram](https://img.shields.io/badge/Telegram-Join-3b82f6?logo=telegram&logoColor=white)](https://t.me/aelirasense)
+
+
+
+---
 ## 🔑 Key Features
 
 **🧠 AnomalyVision**  
