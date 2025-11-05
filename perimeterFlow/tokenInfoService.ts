@@ -1,9 +1,7 @@
 export interface TruncateOptions {
   /** Number of leading characters to keep (non-negative integer) */
   prefixLength?: number
-  /** Number of trailing characters to keep (non-negative integer) */
   suffixLength?: number
-  /** Value to return when the input is null/undefined/empty */
   fallback?: string
   /** The separator placed between prefix and suffix */
   ellipsis?: string
