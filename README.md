@@ -11,7 +11,8 @@ Built for those who sense what others miss.
 
 ---
 
-# Official CA — HSzG6mq7MTUShKGW5r8o8fSsUzEyUWiq3BRZUg8fpump
+# Official CA 
+HSzG6mq7MTUShKGW5r8o8fSsUzEyUWiq3BRZUg8fpump
 
 
 # AeliraSense — Links
