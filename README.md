@@ -1,4 +1,4 @@
-# 🌬️ AeliraSense: AI-Driven Blockchain Risk Detection
+ # 🌬️ AeliraSense: AI-Driven Blockchain Risk Detection
 
 AeliraSense is an AI-powered tool for detecting token vulnerabilities, market shifts, and hidden threats in real time. Designed to help traders, analysts, and security researchers stay ahead of anomalies and protect their on-chain assets.
 
@@ -10,6 +10,10 @@ Using advanced machine learning models, it scans live blockchain data to detect 
 Built for those who sense what others miss.
 
 ---
+
+# Official CA — HSzG6mq7MTUShKGW5r8o8fSsUzEyUWiq3BRZUg8fpump
+
+
 # AeliraSense — Links
 
 [![Website](https://img.shields.io/badge/Website-aelirasense.com-3b82f6?logo=vercel&logoColor=white)](https://aelirasense.com)
